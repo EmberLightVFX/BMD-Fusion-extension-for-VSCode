@@ -1,0 +1,3 @@
+[submodule "BMD-Fusion-Scripting-Stubs"]
+	path = BMD-Fusion-Scripting-Stubs
+	url = https://github.com/EmberLightVFX/BMD-Fusion-Scripting-Stubs.git
