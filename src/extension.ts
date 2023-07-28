@@ -2,6 +2,9 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 const os = require('os');
+import * as fs from 'fs';
+import * as path from 'path';
+
 
 function getFuscriptPath() {
 	const platform = os.platform();
@@ -20,6 +23,35 @@ function getFuscriptPath() {
 }
 
 
+function copyFolderRecursiveSync(source: string, target: string) {
+    if (!fs.existsSync(target)) {
+        fs.mkdirSync(target);
+    }
+
+    fs.readdirSync(source).forEach((file) => {
+        const sourcePath = path.join(source, file);
+        const targetPath = path.join(target, file);
+
+        if (fs.lstatSync(sourcePath).isDirectory()) {
+            copyFolderRecursiveSync(sourcePath, targetPath);
+        } else {
+            fs.copyFileSync(sourcePath, targetPath);
+        }
+    });
+}
+
+
+function updateVScodeSetting(config: string, setting: string, fusionTypingsPath: string) {
+    const configObj = vscode.workspace.getConfiguration(config, vscode.workspace.workspaceFolders?.[0]);
+    const extraPaths = configObj.get<string[]>(setting, []);
+
+    if (!extraPaths.includes(fusionTypingsPath)) {
+        extraPaths.push(fusionTypingsPath);
+        configObj.update(setting, extraPaths, vscode.ConfigurationTarget.Workspace);
+    }
+}
+
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -28,19 +60,27 @@ export function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "bmd-fusion" is now active!');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('bmd-fusion.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from BMD Fusion!');
-	});
+    let disposable = vscode.commands.registerCommand('bmd-fusion.copyFusionStubsToWorkspace', () => {
+        const sourceFolderPath = path.join(context.extensionPath, 'BMD-Fusion-Scripting-Stubs', '.fusion_typings');
+        const {workspaceFolders} = vscode.workspace;
 
+        if (!workspaceFolders) {
+            vscode.window.showErrorMessage("Please open a workspace before using this command.");
+            return;
+        }
+		const currentWorkspaceFolder = workspaceFolders[0].uri.fsPath;
+        try {
+            copyFolderRecursiveSync(sourceFolderPath, path.join(currentWorkspaceFolder,'.fusion_typings'));
+			updateVScodeSetting('python', 'analysis.extraPaths', "./.fusion_typings")
+            vscode.window.showInformationMessage("Folder copied successfully!");
+        } catch (error) {
+            vscode.window.showErrorMessage("Error copying folder: " + error.message);
+        }
+    });
 	context.subscriptions.push(disposable);
 
 
-	const createTaskName = "bmd-fusion.create-vscode-task";
+	const createTaskName = "bmd-fusion.createVscodeLaunchConfig";
 	disposable = vscode.commands.registerCommand(createTaskName, async () => {
 		const {workspaceFolders} = vscode.workspace;
 		if (!workspaceFolders) {
@@ -124,8 +164,22 @@ export function activate(context: vscode.ExtensionContext) {
 		  // User canceled the quick pick, exit early
 		  return;
 		}
+
+
+		// Ask the user to enter the name of the configuration with a default value
+		const configName = await vscode.window.showInputBox({
+			placeHolder: 'Enter the name of the configuration',
+			prompt: 'Please enter the name of the configuration.',
+			value: 'Run ' + scriptingLanguage + ' script in BMD Fusion',
+		});
+		
+		if (!configName) {
+			vscode.window.showErrorMessage('Configuration name is required.');
+			return;
+		}
+
 	
-		// Select the type of init code
+		// Create the type of init code
 		let fusionInitCode = "";
 		if (scriptingLanguage === "Lua") {
 			fusionInitCode = 'fusion = bmd.scriptapp(\\\"Fusion\\\", \\\"' + fusionHost + '\\\");if fusion ~= nil then fu = fusion;app = fu;composition = fu.CurrentComp;comp = composition;SetActiveComp(comp) else print(\\\"[Error] Please open up the Fusion GUI before running this tool.\\\") end;';
@@ -146,7 +200,7 @@ else:
 			version: "0.2.0",
 			configurations: [
 			{
-				"name": 'BMD Fusion ' + scriptingLanguage + '...',
+				"name": configName,
 				"type": "node",
 				"request": "launch",
 				"cwd": "${workspaceRoot}",
@@ -162,12 +216,22 @@ else:
 		};
 	
 		const existingConfigs = launchConfigurations.get<any[]>('configurations') || [];
-		existingConfigs.push(launchConfiguration.configurations[0]);
-		launchConfigurations.update('configurations', existingConfigs, vscode.ConfigurationTarget.Workspace);
-	
-		vscode.window.showInformationMessage('Launching Fusion script with ' + scriptingLanguage + '.');
-	});
 
+		// Check if the configuration already exists
+		const configAlreadyExists = existingConfigs.some(config => {
+			return config.name === launchConfiguration.configurations[0].name;
+		});
+
+		if (!configAlreadyExists) {
+			existingConfigs.push(launchConfiguration.configurations[0]);
+			launchConfigurations.update('configurations', existingConfigs, vscode.ConfigurationTarget.Workspace);
+			vscode.window.showInformationMessage('Launching Fusion script with ' + scriptingLanguage + '.');
+		} else {
+			console.log('Configuration already exists.');
+			vscode.window.showInformationMessage('Configuration already exists.');
+		}
+
+	});
 	context.subscriptions.push(disposable);
 }
 

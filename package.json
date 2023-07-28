@@ -14,12 +14,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "bmd-fusion.helloWorld",
-        "title": "Hello World BMD"
+        "command": "bmd-fusion.createVscodeLaunchConfig",
+        "title": "BMD Fusion: Create launch config"
       },
       {
-        "command": "bmd-fusion.create-vscode-task",
-        "title": "BMD Fusion: Create launch config"
+        "command": "bmd-fusion.copyFusionStubsToWorkspace",
+        "title": "BMD Fusion: Copy Fusion stubs to workspace"
       }
     ],
     "debuggers": [
