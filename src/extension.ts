@@ -71,14 +71,15 @@ export function activate(context: vscode.ExtensionContext) {
 		const currentWorkspaceFolder = workspaceFolders[0].uri.fsPath;
         try {
             copyFolderRecursiveSync(sourceFolderPath, path.join(currentWorkspaceFolder,'.fusion_typings'));
-			updateVScodeSetting('python', 'analysis.extraPaths', "./.fusion_typings")
+			updateVScodeSetting('python', 'analysis.extraPaths', "./.fusion_typings");
             vscode.window.showInformationMessage("Folder copied successfully!");
         } catch (error) {
-            vscode.window.showErrorMessage("Error copying folder: " + error.message);
+			if (error instanceof Error) {
+				vscode.window.showErrorMessage("Error copying folder: " + error.message);
+			}
         }
     });
 	context.subscriptions.push(disposable);
-
 
 	const createTaskName = "bmd-fusion.createVscodeLaunchConfig";
 	disposable = vscode.commands.registerCommand(createTaskName, async () => {
