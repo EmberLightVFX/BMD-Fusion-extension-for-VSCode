@@ -1,8 +1,11 @@
 {
+  "publisher": "EmberLightVFX",
+  "repository": "https://github.com/EmberLightVFX/BMD-Fusion-extension-for-VSCode",
   "name": "bmd-fusion",
   "displayName": "BMD Fusion",
   "description": "A collection of fusion helping tools",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "icon": "images/fusion-studio.png",
   "engines": {
     "vscode": "^1.80.0"
   },
