@@ -1,33 +1,50 @@
 {
   "publisher": "EmberLightVFX",
-  "repository": "https://github.com/EmberLightVFX/BMD-Fusion-extension-for-VSCode",
-  "name": "bmd-fusion",
-  "displayName": "BMD Fusion",
-  "description": "A collection of fusion helping tools",
-  "version": "0.0.2",
-  "icon": "images/fusion-studio.png",
+  "name": "bmd-fusion-scripting",
+  "displayName": "BMD Fusion Scripting",
+  "description": "A collection of helping fusion scripting tools",
+  "version": "0.0.4",
+  "icon": "resources/fusion-studio.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EmberLightVFX/BMD-Fusion-extension-for-VSCode"
+  },
+  "bugs": {
+    "url": "https://github.com/EmberLightVFX/BMD-Fusion-extension-for-VSCode/issues"
+  },
+  "categories": [
+    "Snippets",
+    "Extension Packs",
+    "Education",
+    "Other"
+  ],
+  "keywords": [
+    "blackmagic design",
+    "fusion",
+    "scripting",
+    "lua",
+    "python",
+    "stubs"
+  ],
   "engines": {
     "vscode": "^1.80.0"
   },
-  "categories": [
-    "Other"
-  ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "bmd-fusion.createVscodeLaunchConfig",
+        "command": "bmd-fusion-scripting.createVscodeLaunchConfig",
         "title": "BMD Fusion: Create launch config"
       },
       {
-        "command": "bmd-fusion.copyFusionStubsToWorkspace",
+        "command": "bmd-fusion-scripting.copyFusionStubsToWorkspace",
         "title": "BMD Fusion: Copy Fusion stubs to workspace"
       }
     ],
     "debuggers": [
       {
-        "type": "bmd-fusion",
+        "type": "bmd-fusion-scripting",
         "label": "Launch Fusion Script"
       }
     ]

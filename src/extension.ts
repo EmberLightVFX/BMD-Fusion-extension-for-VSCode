@@ -58,9 +58,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "bmd-fusion" is now active!');
+	console.log('Congratulations, your extension "bmd-fusion-scripting" is now active!');
 
-    let disposable = vscode.commands.registerCommand('bmd-fusion.copyFusionStubsToWorkspace', () => {
+    let disposable = vscode.commands.registerCommand('bmd-fusion-scripting.copyFusionStubsToWorkspace', () => {
         const sourceFolderPath = path.join(context.extensionPath, 'BMD-Fusion-Scripting-Stubs', '.fusion_typings');
         const {workspaceFolders} = vscode.workspace;
 
@@ -81,7 +81,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 	context.subscriptions.push(disposable);
 
-	const createTaskName = "bmd-fusion.createVscodeLaunchConfig";
+	const createTaskName = "bmd-fusion-scripting.createVscodeLaunchConfig";
 	disposable = vscode.commands.registerCommand(createTaskName, async () => {
 		const {workspaceFolders} = vscode.workspace;
 		if (!workspaceFolders) {
