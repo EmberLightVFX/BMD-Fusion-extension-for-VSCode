@@ -4,6 +4,10 @@ Helps you setup your workspace to work as flawlessly as possible when scripting 
 
 ![Scripting for Fusion](resources/execute_script.gif)
 
+## Installation
+
+Download it from the marketplace: <https://marketplace.visualstudio.com/items?itemName=EmberLightVFX.bmd-fusion-scripting>
+
 ## Features
 
 * Generate launch.json configs for your Fusion instance
