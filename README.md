@@ -15,7 +15,7 @@ Download it from the marketplace: <https://marketplace.visualstudio.com/items?it
   * Custom host
   * Lua and Python
   * Custom name
-* Add python stubs for Fusions python API to get IntelliSense support. 
+* Add python stubs for Fusions python API to get IntelliSense support.
 * Execute scripts directly from VSCode
 
 ## Generate launch configs
@@ -32,5 +32,15 @@ Add fusion stubs for your workspace to get IntelliSense code suggestions directl
 
 ![Execute scripts](resources/execute_script.gif)
 With everything installed you can now quick and easy do scripting for Fusion!
+
+## To build
+```
+* cd .\BMD-Fusion-Scripting-Stubs\
+* git checkout -b local-main origin/main
+* git pull
+* cd ..
+* vsce package
+* vsce publish
+```
 
 **Enjoy!**
