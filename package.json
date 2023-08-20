@@ -1,10 +1,14 @@
 {
-  "publisher": "EmberLightVFX",
   "name": "bmd-fusion-scripting",
   "displayName": "BMD Fusion Scripting",
   "description": "A collection of helping fusion scripting tools",
-  "version": "1.1.2",
+  "version": "1.1.3",
+  "publisher": "EmberLightVFX",
   "icon": "resources/fusion-studio.png",
+  "stubsInfo": {
+    "name": "BMD Fusion Scripting",
+    "version": 1.1
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/EmberLightVFX/BMD-Fusion-extension-for-VSCode"
@@ -12,6 +16,9 @@
   "bugs": {
     "url": "https://github.com/EmberLightVFX/BMD-Fusion-extension-for-VSCode/issues"
   },
+  "extensionKind": [
+    "workspace"
+  ],
   "categories": [
     "Snippets",
     "Extension Packs",
@@ -29,13 +36,19 @@
   "engines": {
     "vscode": "^1.80.0"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "workspaceContains:.fusion_typings"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "bmd-fusion-scripting.createVscodeLaunchConfig",
         "title": "BMD Fusion: Create launch config"
+      },
+      {
+        "command": "extension.sayHello",
+        "title": "Say Hello"
       },
       {
         "command": "bmd-fusion-scripting.copyFusionStubsToWorkspace",

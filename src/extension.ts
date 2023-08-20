@@ -1,10 +1,14 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-const os = require('os');
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { registerLogger, traceError, traceInfo, traceLog, traceVerbose, traceWarn } from './common/logging';
+import { loadStubsDefaults } from './common/setup';
+import { createOutputChannel } from './common/vscodeapi';
+
+const os = require('os');
 
 function getFuscriptPath() {
 	const platform = os.platform();
@@ -51,45 +55,100 @@ function updateVScodeSetting(config: string, setting: string, fusionTypingsPath:
     }
 }
 
+async function getInstalledStubsVersion() {
+	const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; // Assumes the first workspace folder is the root
+
+	if (rootPath) {
+		const fusionTypingsPath = path.join(rootPath, '.fusion_typings/__builtins__.pyi');
+		try {
+			const content = await fs.promises.readFile(fusionTypingsPath, 'utf8');
+			const lines = content.split('\n');
+			if (lines.length >= 2) {
+				const version = parseFloat(lines[1].trim().substring(1));
+				traceLog(`Found stubs version: v${version}`);
+				return version;
+			}
+		} catch (err: any) {
+			vscode.window.showErrorMessage(`Error reading __builtins__.pyi file:\n${err.message}`);
+			traceError(`Error reading __builtins__.pyi file:\n${err.message}`);
+		}
+	}
+	return null;
+}
+
+async function installStubs(context: vscode.ExtensionContext) {
+	const sourceFolderPath = path.join(context.extensionPath, 'BMD-Fusion-Scripting-Stubs', '.fusion_typings');
+	const {workspaceFolders} = vscode.workspace;
+
+	if (!workspaceFolders) {
+		vscode.window.showErrorMessage("Please open a workspace before using this command.");
+		traceError("Please open a workspace before using this command.");
+		return;
+	}
+	const currentWorkspaceFolder = workspaceFolders[0].uri.fsPath;
+	try {
+		copyFolderRecursiveSync(sourceFolderPath, path.join(currentWorkspaceFolder,'.fusion_typings'));
+		updateVScodeSetting('python', 'analysis.extraPaths', "./.fusion_typings");
+
+		const stubsVersion = await getInstalledStubsVersion();
+
+		vscode.window.showInformationMessage(`Stubs ${stubsVersion} installed successfully!`);
+		traceInfo(`Stubs ${stubsVersion} installed successfully!`);
+	} catch (err) {
+		if (err instanceof Error) {
+			vscode.window.showErrorMessage(`Error installing stubs:\n${err.message}`);
+			traceError(`Error installing stubs:\n${err.message}`);
+		}
+	}
+}
+
+async function checkStubsForUpdates(stubsVersion: number, context: vscode.ExtensionContext) {
+	const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; // Assumes the first workspace folder is the root
+
+	if (rootPath) {
+		const installedStubsVersion = await getInstalledStubsVersion();
+		if (installedStubsVersion !== null) {
+			if (installedStubsVersion === stubsVersion) {
+				// Show a message with an "Update stubs" button
+				traceLog(`Workspace contains latest stubs-version: v${stubsVersion}`);
+			} else {
+				vscode.window.showWarningMessage(`The workspace does not run the latest stubs-version for Fusion Studio.\nInstalled: v${installedStubsVersion}\nAvailable: v${stubsVersion}`, 'Update Stubs')
+				.then(selection => {
+					if (selection === 'Update Stubs') {
+						installStubs(context);
+					}
+				});
+				traceWarn(`The workspace does not run the latest stubs-version for Fusion Studio.\nInstalled: v${installedStubsVersion}\nAvailable: v${stubsVersion}`);
+			}
+		}
+	}
+}
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    // This is required to get server name and module. This should be
+    // the first thing that we do in this extension.
+    const stubsInfo = loadStubsDefaults();
+	// Setup logging
+    const outputChannel = createOutputChannel(stubsInfo.name);
+    context.subscriptions.push(outputChannel, registerLogger(outputChannel));
+	traceLog("BMD Fusion Scripting is activated");
+	traceLog(`Name: ${stubsInfo.name}`);
+    traceLog(`Available stubs version: v${stubsInfo.version}`);
+	outputChannel.show();
+	checkStubsForUpdates(stubsInfo.version, context);
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "bmd-fusion-scripting" is now active!');
-
-    let disposable = vscode.commands.registerCommand('bmd-fusion-scripting.copyFusionStubsToWorkspace', () => {
-        const sourceFolderPath = path.join(context.extensionPath, 'BMD-Fusion-Scripting-Stubs', '.fusion_typings');
-        const {workspaceFolders} = vscode.workspace;
-
-        if (!workspaceFolders) {
-            vscode.window.showErrorMessage("Please open a workspace before using this command.");
-            return;
-        }
-		const currentWorkspaceFolder = workspaceFolders[0].uri.fsPath;
-        try {
-            copyFolderRecursiveSync(sourceFolderPath, path.join(currentWorkspaceFolder,'.fusion_typings'));
-			updateVScodeSetting('python', 'analysis.extraPaths', "./.fusion_typings");
-            vscode.window.showInformationMessage("Folder copied successfully!");
-        } catch (error) {
-			if (error instanceof Error) {
-				vscode.window.showErrorMessage("Error copying folder: " + error.message);
-			}
-        }
-    });
+    let disposable = vscode.commands.registerCommand('bmd-fusion-scripting.copyFusionStubsToWorkspace', () => installStubs(context));
 	context.subscriptions.push(disposable);
 
-	const createTaskName = "bmd-fusion-scripting.createVscodeLaunchConfig";
-	disposable = vscode.commands.registerCommand(createTaskName, async () => {
+	disposable = vscode.commands.registerCommand("bmd-fusion-scripting.createVscodeLaunchConfig", async () => {
 		const {workspaceFolders} = vscode.workspace;
 		if (!workspaceFolders) {
 		  	vscode.window.showErrorMessage('No workspace folder is open.');
 		  	return;
 		}
 	
-		const currentFolder = workspaceFolders[0].uri;
 		let fuscriptPath = getFuscriptPath();
 
 		if (!fuscriptPath) {

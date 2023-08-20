@@ -34,13 +34,14 @@ Add fusion stubs for your workspace to get IntelliSense code suggestions directl
 With everything installed you can now quick and easy do scripting for Fusion!
 
 ## To build
-```
-* cd .\BMD-Fusion-Scripting-Stubs\
-* git checkout -b local-main origin/main
-* git pull
-* cd ..
-* vsce package
-* vsce publish
+
+``` batch
+cd .\BMD-Fusion-Scripting-Stubs\
+git checkout -b local-main origin/main
+git pull
+cd ..
+vsce package
+vsce publish
 ```
 
 **Enjoy!**
