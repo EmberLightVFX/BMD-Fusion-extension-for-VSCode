@@ -28,38 +28,38 @@ function getFuscriptPath() {
 
 
 function copyFolderRecursiveSync(source: string, target: string) {
-    if (!fs.existsSync(target)) {
-        fs.mkdirSync(target);
-    }
+	if (!fs.existsSync(target)) {
+		fs.mkdirSync(target);
+	}
 
-    fs.readdirSync(source).forEach((file) => {
-        const sourcePath = path.join(source, file);
-        const targetPath = path.join(target, file);
+	fs.readdirSync(source).forEach((file) => {
+		const sourcePath = path.join(source, file);
+		const targetPath = path.join(target, file);
 
-        if (fs.lstatSync(sourcePath).isDirectory()) {
-            copyFolderRecursiveSync(sourcePath, targetPath);
-        } else {
-            fs.copyFileSync(sourcePath, targetPath);
-        }
-    });
+		if (fs.lstatSync(sourcePath).isDirectory()) {
+			copyFolderRecursiveSync(sourcePath, targetPath);
+		} else {
+			fs.copyFileSync(sourcePath, targetPath);
+		}
+	});
 }
 
 
 function updateVScodeSetting(config: string, setting: string, fusionTypingsPath: string) {
-    const configObj = vscode.workspace.getConfiguration(config, vscode.workspace.workspaceFolders?.[0]);
-    const extraPaths = configObj.get<string[]>(setting, []);
+	const configObj = vscode.workspace.getConfiguration(config, vscode.workspace.workspaceFolders?.[0]);
+	const extraPaths = configObj.get<string[]>(setting, []);
 
-    if (!extraPaths.includes(fusionTypingsPath)) {
-        extraPaths.push(fusionTypingsPath);
-        configObj.update(setting, extraPaths, vscode.ConfigurationTarget.Workspace);
-    }
+	if (!extraPaths.includes(fusionTypingsPath)) {
+		extraPaths.push(fusionTypingsPath);
+		configObj.update(setting, extraPaths, vscode.ConfigurationTarget.Workspace);
+	}
 }
 
 async function getInstalledStubsVersion() {
 	const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; // Assumes the first workspace folder is the root
 
 	if (rootPath) {
-		const fusionTypingsPath = path.join(rootPath, '.fusion_typings/__builtins__.pyi');
+		const fusionTypingsPath = path.join(rootPath, 'fusion-stubs/__builtins__.pyi');
 		try {
 			const content = await fs.promises.readFile(fusionTypingsPath, 'utf8');
 			const lines = content.split('\n');
@@ -77,8 +77,8 @@ async function getInstalledStubsVersion() {
 }
 
 async function installStubs(context: vscode.ExtensionContext) {
-	const sourceFolderPath = path.join(context.extensionPath, 'BMD-Fusion-Scripting-Stubs', '.fusion_typings');
-	const {workspaceFolders} = vscode.workspace;
+	const sourceFolderPath = path.join(context.extensionPath, 'BMD-Fusion-Scripting-Stubs', 'fusion-stubs');
+	const { workspaceFolders } = vscode.workspace;
 
 	if (!workspaceFolders) {
 		vscode.window.showErrorMessage("Please open a workspace before using this command.");
@@ -87,8 +87,8 @@ async function installStubs(context: vscode.ExtensionContext) {
 	}
 	const currentWorkspaceFolder = workspaceFolders[0].uri.fsPath;
 	try {
-		copyFolderRecursiveSync(sourceFolderPath, path.join(currentWorkspaceFolder,'.fusion_typings'));
-		updateVScodeSetting('python', 'analysis.extraPaths', "./.fusion_typings");
+		copyFolderRecursiveSync(sourceFolderPath, path.join(currentWorkspaceFolder, 'fusion-stubs'));
+		updateVScodeSetting('python', 'analysis.extraPaths', "./fusion-stubs");
 
 		const stubsVersion = await getInstalledStubsVersion();
 
@@ -113,106 +113,162 @@ async function checkStubsForUpdates(stubsVersion: number, context: vscode.Extens
 				traceLog(`Workspace contains latest stubs-version: v${stubsVersion}`);
 			} else {
 				vscode.window.showWarningMessage(`The workspace does not run the latest stubs-version for Fusion Studio.\nInstalled: v${installedStubsVersion}\nAvailable: v${stubsVersion}`, 'Update Stubs')
-				.then(selection => {
-					if (selection === 'Update Stubs') {
-						installStubs(context);
-					}
-				});
+					.then(selection => {
+						if (selection === 'Update Stubs') {
+							installStubs(context);
+						}
+					});
 				traceWarn(`The workspace does not run the latest stubs-version for Fusion Studio.\nInstalled: v${installedStubsVersion}\nAvailable: v${stubsVersion}`);
 			}
 		}
 	}
 }
 
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-    // This is required to get server name and module. This should be
-    // the first thing that we do in this extension.
-    const stubsInfo = loadStubsDefaults();
-	// Setup logging
-    const outputChannel = createOutputChannel(stubsInfo.name);
-    context.subscriptions.push(outputChannel, registerLogger(outputChannel));
+	const extensionStubsPath = path.join(context.extensionPath, 'BMD-Fusion-Scripting-Stubs', 'fusion-stubs');
+
+	// Create status bar item
+	const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right);
+	function updateStatusBarVisibility() {
+		const activeEditor = vscode.window.activeTextEditor;
+		if (activeEditor && activeEditor.document.languageId === 'python') {
+			statusBarItem.show();
+		} else {
+			statusBarItem.hide();
+		}
+	}
+
+	// Check initial state
+	const configuration = vscode.workspace.getConfiguration('python');
+	const existingExtraPaths = configuration.get<string[]>('analysis.extraPaths') || [];
+	let stubsEnabled = existingExtraPaths.includes(extensionStubsPath);
+
+	// Set initial status bar state
+	statusBarItem.text = `Fusion Stubs: ${stubsEnabled ? 'ON' : 'OFF'}`;
+	statusBarItem.command = 'fusion.toggleStubs';
+	updateStatusBarVisibility();
+
+	context.subscriptions.push(statusBarItem);
+	// Listen for changes in the active text editor
+	vscode.window.onDidChangeActiveTextEditor(updateStatusBarVisibility, null, context.subscriptions);
+
+
+	let disposable = vscode.commands.registerCommand('fusion.toggleStubs', () => {
+		const configuration = vscode.workspace.getConfiguration('python');
+		const existingExtraPaths = configuration.get<string[]>('analysis.extraPaths') || [];
+
+		if (stubsEnabled) {
+			// Remove stubs path
+			const newPaths = existingExtraPaths.filter(p => p !== extensionStubsPath);
+			configuration.update('analysis.extraPaths', newPaths, vscode.ConfigurationTarget.Global);
+			statusBarItem.text = "Fusion Stubs: OFF";
+		} else {
+			// Add stubs path
+			if (!existingExtraPaths.includes(extensionStubsPath)) {
+				configuration.update(
+					'analysis.extraPaths',
+					[...existingExtraPaths, extensionStubsPath],
+					vscode.ConfigurationTarget.Global
+				);
+			}
+			statusBarItem.text = "Fusion Stubs: ON";
+		}
+
+		stubsEnabled = !stubsEnabled;
+	});
+
+	context.subscriptions.push(disposable);
+
+	// This is required to get server name and module. This should be
+	// the first thing that we do in this extension.
+	const stubsInfo = loadStubsDefaults();
+	const outputChannel = createOutputChannel(stubsInfo.name);
+	context.subscriptions.push(outputChannel, registerLogger(outputChannel));
 	traceLog("BMD Fusion Scripting is activated");
 	traceLog(`Name: ${stubsInfo.name}`);
-    traceLog(`Available stubs version: v${stubsInfo.version}`);
+	traceLog(`Available stubs version: v${stubsInfo.version}`);
 	outputChannel.show();
-	checkStubsForUpdates(stubsInfo.version, context);
 
-    let disposable = vscode.commands.registerCommand('bmd-fusion-scripting.copyFusionStubsToWorkspace', () => installStubs(context));
+	disposable = vscode.commands.registerCommand('bmd-fusion-scripting.checkFusionStubsUpdates', () => checkStubsForUpdates(stubsInfo.version, context));
+	context.subscriptions.push(disposable);
+
+	disposable = vscode.commands.registerCommand('bmd-fusion-scripting.copyFusionStubsToWorkspace', () => installStubs(context));
 	context.subscriptions.push(disposable);
 
 	disposable = vscode.commands.registerCommand("bmd-fusion-scripting.createVscodeLaunchConfig", async () => {
-		const {workspaceFolders} = vscode.workspace;
+		const { workspaceFolders } = vscode.workspace;
 		if (!workspaceFolders) {
-		  	vscode.window.showErrorMessage('No workspace folder is open.');
-		  	return;
+			vscode.window.showErrorMessage('No workspace folder is open.');
+			return;
 		}
-	
+
 		let fuscriptPath = getFuscriptPath();
 
 		if (!fuscriptPath) {
-		  	vscode.window.showErrorMessage('Unsupported platform.');
-		  	return;
+			vscode.window.showErrorMessage('Unsupported platform.');
+			return;
 		}
-		
+
 
 		// Prompt the user to choose between "local" and "custom" path
 		let selection = await vscode.window.showQuickPick(['Default Path', 'Custom Path'], {
 			placeHolder: 'Choose the Fusion executable path:'
 		});
-	
+
 		if (selection === 'Custom Path') {
 			const customPath = await vscode.window.showInputBox({
-			prompt: 'Enter the path to fuscript (e.g. ' + fuscriptPath + ' )',
-			validateInput: (value) => {
-				if (!value.trim()) {
-				return 'Please provide a valid path.';
+				prompt: 'Enter the path to fuscript (e.g. ' + fuscriptPath + ' )',
+				validateInput: (value) => {
+					if (!value.trim()) {
+						return 'Please provide a valid path.';
+					}
+					return null;
 				}
-				return null;
-			}
 			});
-	
+
 			if (!customPath) {
-			vscode.window.showErrorMessage('You must provide a valid path for fuscript.');
-			return;
+				vscode.window.showErrorMessage('You must provide a valid path for fuscript.');
+				return;
 			}
-	
+
 			fuscriptPath = customPath;
 		}
 		else if (!selection) {
-		  // User canceled the quick pick, exit early
-		  return;
+			// User canceled the quick pick, exit early
+			return;
 		}
 
-		
+
 		// Prompt the user to choose the host type
 		let fusionHost = "localhost";
 		selection = await vscode.window.showQuickPick(['Localhost', 'Custom Adress'], {
 			placeHolder: 'Choose the host to connect to:'
 		});
-	
+
 		if (selection === 'Custom Adress') {
 			const customPath = await vscode.window.showInputBox({
-			prompt: 'Enter the adress of the fusion host (e.g. 127.0.0.1 )',
-			validateInput: (value) => {
-				if (!value.trim()) {
-				return 'Please provide a valid adress.';
+				prompt: 'Enter the adress of the fusion host (e.g. 127.0.0.1 )',
+				validateInput: (value) => {
+					if (!value.trim()) {
+						return 'Please provide a valid adress.';
+					}
+					return null;
 				}
-				return null;
-			}
 			});
-	
+
 			if (!customPath) {
-			vscode.window.showErrorMessage('You must provide a valid adress for the fusion host.');
-			return;
+				vscode.window.showErrorMessage('You must provide a valid adress for the fusion host.');
+				return;
 			}
-	
+
 			fusionHost = customPath;
 		}
 		else if (!selection) {
-		  // User canceled the quick pick, exit early
-		  return;
+			// User canceled the quick pick, exit early
+			return;
 		}
 
 		// Prompt the user to choose the host type
@@ -221,8 +277,8 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 
 		if (!scriptingLanguage) {
-		  // User canceled the quick pick, exit early
-		  return;
+			// User canceled the quick pick, exit early
+			return;
 		}
 
 
@@ -232,13 +288,13 @@ export function activate(context: vscode.ExtensionContext) {
 			prompt: 'Please enter the name of the configuration.',
 			value: 'Run ' + scriptingLanguage + ' script in BMD Fusion',
 		});
-		
+
 		if (!configName) {
 			vscode.window.showErrorMessage('Configuration name is required.');
 			return;
 		}
 
-	
+
 		// Create the type of init code
 		let fusionInitCode = "";
 		if (scriptingLanguage === "Lua") {
@@ -259,22 +315,22 @@ else:
 		const launchConfiguration = {
 			version: "0.2.0",
 			configurations: [
-			{
-				"name": configName,
-				"type": "node",
-				"request": "launch",
-				"cwd": "${workspaceRoot}",
-				"runtimeExecutable": fuscriptPath,
-				"runtimeArgs": [
-				  "-l", scriptingLanguage,
-				  "-x", fusionInitCode,
-				  "${file}"
-				],
-				"console": "integratedTerminal"
-			}
+				{
+					"name": configName,
+					"type": "node",
+					"request": "launch",
+					"cwd": "${workspaceRoot}",
+					"runtimeExecutable": fuscriptPath,
+					"runtimeArgs": [
+						"-l", scriptingLanguage,
+						"-x", fusionInitCode,
+						"${file}"
+					],
+					"console": "integratedTerminal"
+				}
 			]
 		};
-	
+
 		const existingConfigs = launchConfigurations.get<any[]>('configurations') || [];
 
 		// Check if the configuration already exists
@@ -296,4 +352,4 @@ else:
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }

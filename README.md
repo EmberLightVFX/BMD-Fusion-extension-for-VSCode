@@ -33,14 +33,37 @@ Add fusion stubs for your workspace to get IntelliSense code suggestions directl
 ![Execute scripts](resources/execute_script.gif)
 With everything installed you can now quick and easy do scripting for Fusion!
 
-## To build
+## Development
+
+### Update BMD-Fusion-Scripting-Stubs submodule
 
 ``` batch
-cd .\BMD-Fusion-Scripting-Stubs\
-git checkout -b local-main origin/main
-git pull
-cd ..
+git submodule update --remote --merge
+```
+
+### Npm initialization
+
+``` batch
+npm install
+npm run compile
+npm run watch
+```
+
+Before running and debugging the extension, run `npm run watch`
+
+## To build
+
+First run the npm initialization
+
+``` batch
+git submodule update --remote --merge
 vsce package
+vsce publish
+```
+
+## To publish
+
+``` batch
 vsce publish
 ```
 

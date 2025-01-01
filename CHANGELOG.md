@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.2.0 - 2025-01-01
+
+- Updated stubs to v1.5 (Fusion 19.1.2)
+- Added button to toggle Fusion stubs while working with python files
+- Added Fuse language support. This uses LUA syntax highlighting for all code and C# for DCTL code!
+- Removed the need to install stubs-files (you can still do if you want tho)
+
 ## 1.1.4 - 2023-08-20
 
 - Updated stubs to v1.3
