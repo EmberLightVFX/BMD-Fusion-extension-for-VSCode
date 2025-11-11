@@ -37,13 +37,13 @@ With everything installed you can now quick and easy do scripting for Fusion!
 
 ### Update BMD-Fusion-Scripting-Stubs submodule
 
-``` batch
+``` bash
 git submodule update --remote --merge
 ```
 
 ### Npm initialization
 
-``` batch
+``` bash
 npm install
 npm run compile
 npm run watch
@@ -54,15 +54,22 @@ Before running and debugging the extension, run `npm run watch`
 ## To build
 
 First run the npm initialization
+Make sure you have vsce installed
 
-``` batch
+``` bash
+npm install -g @vscode/vsce
+```
+
+Update the submodule and then package
+
+``` bash
 git submodule update --remote --merge
 vsce package
 ```
 
 ## To publish
 
-``` batch
+``` bash
 vsce publish
 ```
 
