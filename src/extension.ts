@@ -45,16 +45,6 @@ function copyFolderRecursiveSync(source: string, target: string) {
 }
 
 
-function updateVScodeSetting(config: string, setting: string, fusionTypingsPath: string) {
-	const configObj = vscode.workspace.getConfiguration(config, vscode.workspace.workspaceFolders?.[0]);
-	const extraPaths = configObj.get<string[]>(setting, []);
-
-	if (!extraPaths.includes(fusionTypingsPath)) {
-		extraPaths.push(fusionTypingsPath);
-		configObj.update(setting, extraPaths, vscode.ConfigurationTarget.Workspace);
-	}
-}
-
 async function getInstalledStubsVersion() {
 	const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; // Assumes the first workspace folder is the root
 
@@ -88,8 +78,6 @@ async function installStubs(context: vscode.ExtensionContext) {
 	const currentWorkspaceFolder = workspaceFolders[0].uri.fsPath;
 	try {
 		copyFolderRecursiveSync(sourceFolderPath, path.join(currentWorkspaceFolder, '.fusion-stubs'));
-		updateVScodeSetting('python', 'analysis.extraPaths', "./.fusion-stubs");
-
 		const stubsVersion = await getInstalledStubsVersion();
 
 		vscode.window.showInformationMessage(`Stubs ${stubsVersion} installed successfully!`);
