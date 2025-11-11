@@ -1,0 +1,27 @@
+{
+    "name": "Fuse with DCTL highlight",
+    "scopeName": "source.fuse",
+    "patterns": [
+        {
+            "name": "string.quoted.bracketed.fuse",
+            "begin": "=[\\n\\s]*\\[\\[",
+            "end": "\\]\\]",
+            "contentName": "source.cs",
+            "patterns": [
+                {
+                    "include": "source.cs"
+                }
+            ]
+        },
+        {
+            "include": "source.lua"
+        }
+    ],
+    "repository": {},
+    "fileTypes": [
+        "fuse",
+        "Fuse",
+        "FUSE"
+    ],
+    "uuid": "7c90d507-512f-40e7-b398-c2d1349d799c"
+}

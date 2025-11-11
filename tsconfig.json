@@ -1,17 +1,20 @@
 {
 	"compilerOptions": {
-		"module": "commonjs",
-		"target": "ES2020",
-		"outDir": "out",
+		"module": "commonjs", // Use CommonJS for VS Code extensions
+		"target": "ES2020", // Set target to ES2020 (or ES5 for maximum compatibility)
+		"outDir": "out", // Output directory for compiled JS
 		"lib": [
 			"ES2020"
-		],
-		"sourceMap": true,
-		"rootDir": "src",
-		"strict": true   /* enable all strict type-checking options */
-		/* Additional Checks */
-		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
-		// "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
-		// "noUnusedParameters": true,  /* Report errors on unused parameters. */
-	}
+		], // Enable support for ES2020 features
+		"sourceMap": true, // Enable source maps for debugging
+		"rootDir": "src", // Source directory
+		"strict": true, // Enable all strict type-checking options
+		"moduleResolution": "node", // Use Node.js module resolution
+		"typeRoots": [
+			"./node_modules/@types" // Ensure type definitions are loaded from node_modules
+		]
+	},
+	"include": [
+		"src/**/*.ts" // Make sure to include all the TypeScript source files
+	]
 }
