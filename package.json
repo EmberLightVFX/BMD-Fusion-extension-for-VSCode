@@ -2,12 +2,12 @@
     "name": "bmd-fusion-scripting",
     "displayName": "BMD Fusion Scripting",
     "description": "A collection of helping fusion scripting tools",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "publisher": "EmberLightVFX",
     "icon": "resources/fusion-studio.png",
     "stubsInfo": {
         "name": "BMD Fusion Scripting",
-        "version": 1.2
+        "version": "1.20.1"
     },
     "repository": {
         "type": "git",
