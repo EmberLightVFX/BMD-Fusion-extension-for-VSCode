@@ -13,13 +13,13 @@ const os = require('os');
 function getFuscriptPath() {
 	const platform = os.platform();
 	if (platform === 'win32') {
-		return 'C:\\Program Files\\Blackmagic Design\\Fusion 18\\fuscript.exe';
+		return 'C:\\Program Files\\Blackmagic Design\\Fusion 20\\fuscript.exe';
 	} else if (platform === 'darwin') {
 		// Replace this with the path for macOS
-		return '/Applications/Blackmagic Fusion 18/Fusion.app/Contents/MacOS/fusionscript.so';
+		return '/Applications/Blackmagic Fusion 20/Fusion.app/Contents/MacOS/fusionscript.so';
 	} else if (platform === 'linux') {
 		// Replace this with the path for Linux
-		return '/opt/BlackmagicDesign/Fusion18/fusionscript.so';
+		return '/opt/BlackmagicDesign/Fusion20/fusionscript.so';
 	} else {
 		// Unsupported platform
 		return null;
