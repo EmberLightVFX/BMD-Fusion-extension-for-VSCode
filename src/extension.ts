@@ -59,7 +59,7 @@ async function getInstalledStubsVersion() {
 	const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath; // Assumes the first workspace folder is the root
 
 	if (rootPath) {
-		const fusionTypingsPath = path.join(rootPath, 'fusion-stubs/__builtins__.pyi');
+		const fusionTypingsPath = path.join(rootPath, '.fusion-stubs/__builtins__.pyi');
 		try {
 			const content = await fs.promises.readFile(fusionTypingsPath, 'utf8');
 			const lines = content.split('\n');
@@ -87,8 +87,8 @@ async function installStubs(context: vscode.ExtensionContext) {
 	}
 	const currentWorkspaceFolder = workspaceFolders[0].uri.fsPath;
 	try {
-		copyFolderRecursiveSync(sourceFolderPath, path.join(currentWorkspaceFolder, 'fusion-stubs'));
-		updateVScodeSetting('python', 'analysis.extraPaths', "./fusion-stubs");
+		copyFolderRecursiveSync(sourceFolderPath, path.join(currentWorkspaceFolder, '.fusion-stubs'));
+		updateVScodeSetting('python', 'analysis.extraPaths', "./.fusion-stubs");
 
 		const stubsVersion = await getInstalledStubsVersion();
 
