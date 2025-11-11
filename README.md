@@ -58,7 +58,6 @@ First run the npm initialization
 ``` batch
 git submodule update --remote --merge
 vsce package
-vsce publish
 ```
 
 ## To publish
